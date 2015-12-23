@@ -7,9 +7,12 @@ e() {
 
 # usage
 usage () {
-  echo "Usage: ${0##*/} [-h|--help] [--delete-all] <dir> <threshold> <datadog-metric> <datadog-api-key>"
+  echo "Usage: ${0##*/} [-h|--help] [--delete-all] <dir> <threshold> <datadog-metric> <datadog-api-key> [datadog-tags]"
   exit 0
 }
+
+# default value
+DATADOG_TAGS='environment:test'
 
 # read arguments
 for ARG in $@
@@ -28,6 +31,7 @@ DIR=$1
 THRESHOLD=$2
 DATADOG_METRIC=$3
 DATADOG_API_KEY=$4
+if [ ! -z $5 ]; then DATADOG_TAGS=$5; fi
 
 # get inode usage
 NUM="$(du --inodes -s ${DIR} | awk '{ print $1; }')"
@@ -42,7 +46,7 @@ curl  -X POST -H "Content-type: application/json" \
           \"points\":[[$currenttime, $NUM]],
           \"type\":\"gauge\",
           \"host\":\"$(hostname)\",
-          \"tags\":[\"environment:test\"]}
+          \"tags\":[\"${DATADOG_TAGS}\"]}
         ]
     }" \
 "https://app.datadoghq.com/api/v1/series?api_key=${DATADOG_API_KEY}"
